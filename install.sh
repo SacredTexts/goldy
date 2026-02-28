@@ -172,12 +172,102 @@ echo "      -> $CLAUDE_COMMANDS/goldy.md"
 echo "      -> $CLAUDE_COMMANDS/goldy-loop.md"
 
 # ── Step 4: Install Gold Standard plan template ──
-echo "[4/5] Installing Gold Standard plan template..."
+echo "[4/7] Installing Gold Standard plan template..."
 cp "$GOLDY_SRC/GOLD-STANDARD-SAMPLE-PLAN.md" "$CLAUDE_ROOT/"
 echo "      -> $CLAUDE_ROOT/GOLD-STANDARD-SAMPLE-PLAN.md"
 
-# ── Step 5: Verify ──
-echo "[5/5] Verifying installation..."
+# ── Step 5: Install prevention hooks ──
+echo "[5/7] Installing prevention hooks..."
+HOOKS_DIR="$CLAUDE_ROOT/hooks"
+mkdir -p "$HOOKS_DIR"
+
+# Copy hook script
+cp "$GOLDY_SRC/hooks/pre_tool_use.py" "$HOOKS_DIR/pre_tool_use.py"
+echo "      -> $HOOKS_DIR/pre_tool_use.py"
+
+# Copy documentation
+cp "$GOLDY_SRC/hooks/prevention.md" "$HOOKS_DIR/prevention.md"
+echo "      -> $HOOKS_DIR/prevention.md"
+
+# Install default config only if one doesn't already exist (preserve user customizations)
+if [ ! -f "$HOOKS_DIR/prevention.config.json" ]; then
+    cp "$GOLDY_SRC/hooks/prevention.config.json" "$HOOKS_DIR/prevention.config.json"
+    echo "      -> $HOOKS_DIR/prevention.config.json (default config)"
+else
+    echo "      -> $HOOKS_DIR/prevention.config.json (existing config preserved)"
+fi
+
+# ── Step 6: Register hooks in global Claude Code settings ──
+echo "[6/7] Registering hooks in Claude Code settings..."
+
+SETTINGS_FILE="$CLAUDE_ROOT/settings.json"
+
+if [ -f "$SETTINGS_FILE" ]; then
+    # Check if PreToolUse hook is already registered
+    if python3 -c "
+import json, sys
+with open('$SETTINGS_FILE') as f:
+    s = json.load(f)
+hooks = s.get('hooks', {}).get('PreToolUse', [])
+for h in hooks:
+    for hk in h.get('hooks', []):
+        if 'pre_tool_use.py' in hk.get('command', ''):
+            sys.exit(0)  # Already registered
+sys.exit(1)
+" 2>/dev/null; then
+        echo "      -> PreToolUse hook already registered in settings.json"
+    else
+        # Add the hook using python3 to safely modify JSON
+        python3 -c "
+import json
+with open('$SETTINGS_FILE') as f:
+    s = json.load(f)
+s.setdefault('hooks', {}).setdefault('PreToolUse', [])
+# Check if already has an entry
+existing = False
+for h in s['hooks']['PreToolUse']:
+    for hk in h.get('hooks', []):
+        if 'pre_tool_use.py' in hk.get('command', ''):
+            existing = True
+            break
+if not existing:
+    s['hooks']['PreToolUse'].append({
+        'matcher': '',
+        'hooks': [{
+            'type': 'command',
+            'command': 'python3 $HOOKS_DIR/pre_tool_use.py'
+        }]
+    })
+    with open('$SETTINGS_FILE', 'w') as f:
+        json.dump(s, f, indent=4)
+    print('      -> PreToolUse hook registered in settings.json')
+else:
+    print('      -> PreToolUse hook already registered in settings.json')
+" 2>/dev/null || echo "      -> WARNING: Could not auto-register hook. Add manually to settings.json"
+    fi
+else
+    # Create minimal settings with hook
+    python3 -c "
+import json
+s = {
+    'hooks': {
+        'PreToolUse': [{
+            'matcher': '',
+            'hooks': [{
+                'type': 'command',
+                'command': 'python3 $HOOKS_DIR/pre_tool_use.py'
+            }]
+        }]
+    }
+}
+with open('$SETTINGS_FILE', 'w') as f:
+    json.dump(s, f, indent=4)
+print('      -> Created settings.json with PreToolUse hook')
+" 2>/dev/null || echo "      -> WARNING: Could not create settings.json. Add hook manually."
+fi
+
+# ── Step 7: Verify ──
+echo "[7/7] Verifying installation..."
 echo ""
 
 ERRORS=0
@@ -199,6 +289,8 @@ check_exists "$CLAUDE_SKILL/references/planning-contract.md"
 check_exists "$CLAUDE_COMMANDS/goldy.md"
 check_exists "$CLAUDE_COMMANDS/goldy-loop.md"
 check_exists "$CLAUDE_ROOT/GOLD-STANDARD-SAMPLE-PLAN.md"
+check_exists "$CLAUDE_ROOT/hooks/pre_tool_use.py"
+check_exists "$CLAUDE_ROOT/hooks/prevention.config.json"
 
 # Verify python3 is available
 if command -v python3 &>/dev/null; then
@@ -211,18 +303,22 @@ fi
 
 echo ""
 if [ "$ERRORS" -eq 0 ]; then
-    echo "╔══════════════════════════════════════════════╗"
-    echo "║  ✓ GOLDY installed successfully!              ║"
-    echo "╠══════════════════════════════════════════════╣"
-    echo "║  Commands:                                    ║"
-    echo "║    /goldy          — plan mode                ║"
-    echo "║    /goldy-loop     — phase execution          ║"
-    echo "║                                               ║"
-    echo "║  Update:  cd ~/.goldy && make update          ║"
-    echo "║  Remove:  cd ~/.goldy && make uninstall       ║"
-    echo "║                                               ║"
-    echo "║  Python: pure stdlib, no pip needed            ║"
-    echo "╚══════════════════════════════════════════════╝"
+    echo "╔══════════════════════════════════════════════════╗"
+    echo "║  ✓ GOLDY installed successfully!                 ║"
+    echo "╠══════════════════════════════════════════════════╣"
+    echo "║  Commands:                                       ║"
+    echo "║    /goldy          — plan mode                   ║"
+    echo "║    /goldy-loop     — phase execution             ║"
+    echo "║                                                  ║"
+    echo "║  Protection hooks:                               ║"
+    echo "║    PreToolUse — blocks rm -rf, rmtree, exfil     ║"
+    echo "║    Config: ~/.claude/hooks/prevention.config.json ║"
+    echo "║                                                  ║"
+    echo "║  Update:  cd ~/.goldy && make update             ║"
+    echo "║  Remove:  cd ~/.goldy && make uninstall          ║"
+    echo "║                                                  ║"
+    echo "║  Python: pure stdlib, no pip needed               ║"
+    echo "╚══════════════════════════════════════════════════╝"
 else
     echo "Install completed with $ERRORS error(s). Check above."
     exit 1
