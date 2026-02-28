@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.9', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Lint - compile check all scripts
+        run: |
+          for f in scripts/*.py; do
+            python -m py_compile "$f"
+          done
+
+      - name: Run tests
+        run: python -m pytest tests/ -v 2>/dev/null || python -m unittest discover -s tests -v
+
+      - name: Verify install script runs
+        run: bash install.sh
+
+      - name: Verify installed files
+        run: |
+          test -L "$HOME/.claude/skills/goldy"
+          test -L "$HOME/.agents/skills/goldy"
+          test -f "$HOME/.claude/commands/goldy.md"
+          test -f "$HOME/.claude/commands/goldy-loop.md"
+          test -f "$HOME/.claude/GOLD-STANDARD-SAMPLE-PLAN.md"
+          echo "All files verified."
+
+      - name: Verify no hardcoded home paths
+        run: |
+          # Ensure command files use the actual $HOME, not a hardcoded path
+          grep -q "$HOME" "$HOME/.claude/commands/goldy.md"
+          echo "Paths correctly resolved."
