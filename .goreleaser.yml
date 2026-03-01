@@ -4,11 +4,12 @@ project_name: goldy
 
 before:
   hooks:
-    - cd cmd/goldy && go mod tidy
+    - bash -c "cd cmd/goldy && go mod tidy"
 
 builds:
   - id: goldy
-    main: ./cmd/goldy
+    dir: cmd/goldy
+    main: .
     binary: goldy
     env:
       - CGO_ENABLED=0
@@ -24,11 +25,13 @@ builds:
 
 archives:
   - id: default
-    format: tar.gz
+    formats:
+      - tar.gz
     name_template: "goldy_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 
 checksum:
   name_template: "checksums.txt"
