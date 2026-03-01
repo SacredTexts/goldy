@@ -22,13 +22,13 @@ if (fs.existsSync(binPath)) {
 // Install globally so `goldy` works as a standalone command next time
 console.log("Installing goldy globally...\n");
 try {
-  execSync("npm install -g goldy", { stdio: "inherit" });
+  execSync("npm install -g goldy-cli", { stdio: "inherit" });
   console.log("\nDone! You can now run: goldy");
 
   // Run it immediately after global install
   execSync("goldy " + process.argv.slice(2).join(" "), { stdio: "inherit" });
 } catch (err) {
   if (err.status !== undefined) process.exit(err.status);
-  console.error("Global install failed. Try manually: npm install -g goldy");
+  console.error("Global install failed. Try manually: npm install -g goldy-cli");
   process.exit(1);
 }

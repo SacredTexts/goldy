@@ -1,5 +1,5 @@
 {
-  "name": "goldy",
+  "name": "goldy-cli",
   "version": "1.2.0",
   "description": "GOLDY toolkit for Claude Code",
   "bin": {
