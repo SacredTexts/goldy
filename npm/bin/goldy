@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+const { execFileSync, execSync } = require("child_process");
+const path = require("path");
+const os = require("os");
+const fs = require("fs");
+
+const binSuffix = os.platform() === "win32" ? ".exe" : "";
+const binPath = path.join(__dirname, `goldy${binSuffix}`);
+
+// If binary exists locally (global install or npx cache), just run it
+if (fs.existsSync(binPath)) {
+  try {
+    execFileSync(binPath, process.argv.slice(2), { stdio: "inherit" });
+  } catch (err) {
+    if (err.status !== undefined) process.exit(err.status);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+// Binary not found — we're running via npx without a cached binary
+// Install globally so `goldy` works as a standalone command next time
+console.log("Installing goldy globally...\n");
+try {
+  execSync("npm install -g goldy", { stdio: "inherit" });
+  console.log("\nDone! You can now run: goldy");
+
+  // Run it immediately after global install
+  execSync("goldy " + process.argv.slice(2).join(" "), { stdio: "inherit" });
+} catch (err) {
+  if (err.status !== undefined) process.exit(err.status);
+  console.error("Global install failed. Try manually: npm install -g goldy");
+  process.exit(1);
+}

@@ -1,0 +1,33 @@
+{
+  "name": "goldy",
+  "version": "1.0.0",
+  "description": "GOLDY toolkit for Claude Code",
+  "bin": {
+    "goldy": "bin/goldy"
+  },
+  "preferGlobal": true,
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SacredTexts/goldy.git"
+  },
+  "keywords": [
+    "goldy",
+    "claude",
+    "claude-code",
+    "installer",
+    "cli"
+  ],
+  "license": "MIT",
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}

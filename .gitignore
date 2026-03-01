@@ -25,3 +25,8 @@ build/
 *.tar.gz
 .staging/
 logs/
+
+# Go build artifacts
+goldy-install
+npm/bin/goldy-*
+npm/node_modules/

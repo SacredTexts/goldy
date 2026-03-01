@@ -1,4 +1,4 @@
-.PHONY: test lint install uninstall update verify help
+.PHONY: test lint install install-go uninstall update verify help build-go
 
 GOLDY_HOME := $(HOME)/.goldy
 SCRIPTS_DIR := $(GOLDY_HOME)/scripts
@@ -40,6 +40,12 @@ update: ## Pull latest changes and re-install
 
 verify: ## Verify installation integrity
 	python3 scripts/goldy_install.py verify
+
+build-go: ## Build the Go TUI installer
+	cd cmd/goldy && go build -o ../../goldy .
+
+install-go: ## Install goldy binary to GOPATH/bin
+	cd cmd/goldy && go install .
 
 count: ## Show file counts
 	@echo "Python scripts: $$(find scripts -name '*.py' | wc -l | tr -d ' ')"
