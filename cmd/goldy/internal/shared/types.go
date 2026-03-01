@@ -37,6 +37,36 @@ type AllStepsCompleteMsg struct {
 	Results []StepResult
 }
 
+// SubItem is one selectable item within a component (e.g., one skill)
+type SubItem struct {
+	Name     string
+	Selected bool
+}
+
+// Startup screen messages
+type StartupCompleteMsg struct {
+	Updated bool
+	Summary string
+	Error   error
+}
+
+type StartupDoneMsg struct{}
+
+// Picker screen messages
+type OpenPickerMsg struct {
+	ComponentID   string
+	ComponentName string
+	Items         []SubItem
+}
+
+type PickerDoneMsg struct {
+	ComponentID string
+	Items       []SubItem
+}
+
+// Update / Install All
+type StartUpdateAllMsg struct{}
+
 // Key bindings
 type KeyMap struct {
 	Quit key.Binding

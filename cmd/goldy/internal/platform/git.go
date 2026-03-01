@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/config"
 )
@@ -40,4 +41,24 @@ func Clone(dest string) error {
 
 func Pull(dir string) error {
 	return RunCommandInDir(dir, "git", "pull", "--ff-only")
+}
+
+type PullResult struct {
+	Updated bool
+	Summary string
+	Error   error
+}
+
+func PullWithResult(dir string) PullResult {
+	out, err := RunCommandOutput(dir, "git", "pull", "--ff-only")
+	if err != nil {
+		return PullResult{Error: err, Summary: "Pull failed"}
+	}
+	if strings.Contains(out, "Already up to date") {
+		return PullResult{Updated: false, Summary: "Already up to date"}
+	}
+	// Extract summary from git output (last non-empty line usually)
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	summary := lines[len(lines)-1]
+	return PullResult{Updated: true, Summary: summary}
 }

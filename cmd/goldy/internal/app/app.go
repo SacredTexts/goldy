@@ -10,7 +10,9 @@ import (
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/done"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/info"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/menu"
+	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/picker"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/progress"
+	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/startup"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/verify"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/shared"
 )
@@ -18,20 +20,24 @@ import (
 type Screen int
 
 const (
-	ScreenMenu Screen = iota
+	ScreenStartup Screen = iota
+	ScreenMenu
 	ScreenProgress
 	ScreenVerify
 	ScreenDone
 	ScreenInfo
+	ScreenPicker
 )
 
 type Model struct {
 	screen       Screen
+	startup      startup.Model
 	menu         menu.Model
 	progress     progress.Model
 	verify       verify.Model
 	doneScreen   done.Model
 	info         info.Model
+	picker       picker.Model
 	cfg          *config.Paths
 	logger       *errs.Logger
 	orchestrator *installer.Orchestrator
@@ -43,8 +49,9 @@ func New(cfg *config.Paths, logger *errs.Logger) *Model {
 	orch := installer.NewOrchestrator(cfg, logger)
 
 	return &Model{
-		screen:       ScreenMenu,
-		menu:         menu.New(comps),
+		screen:       ScreenStartup,
+		startup:      startup.New(cfg),
+		menu:         menu.New(comps, cfg),
 		verify:       verify.New(),
 		doneScreen:   done.New(),
 		info:         info.New(comps),
@@ -59,18 +66,34 @@ func (m *Model) SetProgram(p *tea.Program) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return nil
+	return m.startup.Init()
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		m.startup, _ = m.startup.Update(msg)
 		m.menu, _ = m.menu.Update(msg)
 		m.progress, _ = m.progress.Update(msg)
 		m.verify, _ = m.verify.Update(msg)
 		doneModel, _ := m.doneScreen.Update(msg)
 		m.doneScreen = doneModel.(done.Model)
 		m.info, _ = m.info.Update(msg)
+		m.picker, _ = m.picker.Update(msg)
+		return m, nil
+
+	case shared.StartupCompleteMsg:
+		var cmd tea.Cmd
+		m.startup, cmd = m.startup.Update(msg)
+		if msg.Updated {
+			comps := components.All(m.cfg)
+			m.menu = menu.New(comps, m.cfg)
+			m.info = info.New(comps)
+		}
+		return m, cmd
+
+	case shared.StartupDoneMsg:
+		m.screen = ScreenMenu
 		return m, nil
 
 	case shared.ShowInfoMsg:
@@ -81,10 +104,41 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.screen = ScreenMenu
 		return m, nil
 
+	case shared.OpenPickerMsg:
+		m.picker = picker.New(msg.ComponentID, msg.ComponentName, msg.Items)
+		m.screen = ScreenPicker
+		return m, nil
+
+	case shared.PickerDoneMsg:
+		m.menu, _ = m.menu.Update(msg)
+		m.screen = ScreenMenu
+		return m, nil
+
 	case menu.StartInstallMsg:
 		m.progress = progress.New(msg.Components)
 		m.screen = ScreenProgress
-		m.orchestrator.RunAsync(m.program, msg.Components)
+		if len(msg.SubSelections) > 0 {
+			filters := make(map[string][]string)
+			for compID, items := range msg.SubSelections {
+				var names []string
+				for _, item := range items {
+					if item.Selected {
+						names = append(names, item.Name)
+					}
+				}
+				filters[compID] = names
+			}
+			m.orchestrator.RunAsyncFiltered(m.program, msg.Components, filters)
+		} else {
+			m.orchestrator.RunAsync(m.program, msg.Components)
+		}
+		return m, m.progress.Init()
+
+	case shared.StartUpdateAllMsg:
+		allComps := components.All(m.cfg)
+		m.progress = progress.NewWithUpdate(allComps)
+		m.screen = ScreenProgress
+		m.orchestrator.RunUpdateAsync(m.program, allComps)
 		return m, m.progress.Init()
 
 	case shared.StepStartedMsg, shared.StepCompletedMsg:
@@ -106,7 +160,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				ErrLog:   m.logger.Path(),
 			})
 			doneModel, _ := m.doneScreen.Update(done.SetResultsMsg{Results: results})
-		m.doneScreen = doneModel.(done.Model)
+			m.doneScreen = doneModel.(done.Model)
 			m.screen = ScreenVerify
 			return m, nil
 		}
@@ -118,6 +172,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	switch m.screen {
+	case ScreenStartup:
+		m.startup, cmd = m.startup.Update(msg)
 	case ScreenMenu:
 		m.menu, cmd = m.menu.Update(msg)
 	case ScreenProgress:
@@ -130,12 +186,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.doneScreen = newDone.(done.Model)
 	case ScreenInfo:
 		m.info, cmd = m.info.Update(msg)
+	case ScreenPicker:
+		m.picker, cmd = m.picker.Update(msg)
 	}
 	return m, cmd
 }
 
 func (m *Model) View() string {
 	switch m.screen {
+	case ScreenStartup:
+		return m.startup.View()
 	case ScreenMenu:
 		return m.menu.View()
 	case ScreenProgress:
@@ -146,6 +206,8 @@ func (m *Model) View() string {
 		return m.doneScreen.View()
 	case ScreenInfo:
 		return m.info.View()
+	case ScreenPicker:
+		return m.picker.View()
 	default:
 		return ""
 	}

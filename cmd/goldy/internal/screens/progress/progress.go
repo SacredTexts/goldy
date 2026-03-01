@@ -54,6 +54,23 @@ func New(comps []components.Component) Model {
 	}
 }
 
+func NewWithUpdate(comps []components.Component) Model {
+	steps := make([]stepView, len(comps)+1)
+	steps[0] = stepView{name: "Update Repository", status: Pending}
+	for i, c := range comps {
+		steps[i+1] = stepView{name: c.Name, status: Pending}
+	}
+
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(style.Gold)
+
+	return Model{
+		steps:   steps,
+		spinner: s,
+	}
+}
+
 func (m Model) Init() tea.Cmd {
 	return m.spinner.Tick
 }
