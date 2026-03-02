@@ -26,11 +26,12 @@ type Model struct {
 	cfg              *config.Paths
 	version          string
 	buildDate        string
+	builtBy          string
 	width            int
 	height           int
 }
 
-func New(items []components.Component, cfg *config.Paths, version, buildDate string) Model {
+func New(items []components.Component, cfg *config.Paths, version, buildDate, builtBy string) Model {
 	return Model{
 		items:            items,
 		selected:         make(map[int]bool),
@@ -38,6 +39,7 @@ func New(items []components.Component, cfg *config.Paths, version, buildDate str
 		cfg:              cfg,
 		version:          version,
 		buildDate:        buildDate,
+		builtBy:          builtBy,
 	}
 }
 
@@ -243,7 +245,7 @@ func (m Model) View() string {
 	b.WriteString(style.HelpDesc.Render(" quit"))
 
 	b.WriteString("\n\n")
-	b.WriteString(style.Muted.Render(fmt.Sprintf("v%s · built %s", m.version, m.buildDate)))
+	b.WriteString(style.Muted.Render(fmt.Sprintf("v%s · built %s by %s", m.version, m.buildDate, m.builtBy)))
 
 	return b.String()
 }

@@ -44,16 +44,17 @@ type Model struct {
 	program      *tea.Program
 	version      string
 	buildDate    string
+	builtBy      string
 }
 
-func New(cfg *config.Paths, logger *errs.Logger, version, buildDate string) *Model {
+func New(cfg *config.Paths, logger *errs.Logger, version, buildDate, builtBy string) *Model {
 	comps := components.All(cfg)
 	orch := installer.NewOrchestrator(cfg, logger)
 
 	return &Model{
 		screen:       ScreenStartup,
 		startup:      startup.New(cfg),
-		menu:         menu.New(comps, cfg, version, buildDate),
+		menu:         menu.New(comps, cfg, version, buildDate, builtBy),
 		verify:       verify.New(),
 		doneScreen:   done.New(),
 		info:         info.New(comps),
@@ -62,6 +63,7 @@ func New(cfg *config.Paths, logger *errs.Logger, version, buildDate string) *Mod
 		orchestrator: orch,
 		version:      version,
 		buildDate:    buildDate,
+		builtBy:      builtBy,
 	}
 }
 
@@ -91,7 +93,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.startup, cmd = m.startup.Update(msg)
 		if msg.Updated {
 			comps := components.All(m.cfg)
-			m.menu = menu.New(comps, m.cfg, m.version, m.buildDate)
+			m.menu = menu.New(comps, m.cfg, m.version, m.buildDate, m.builtBy)
 			m.info = info.New(comps)
 		}
 		return m, cmd

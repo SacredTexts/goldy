@@ -20,6 +20,7 @@ var (
 	// Set via -ldflags at build time
 	Version   = "dev"
 	BuildDate = "unknown"
+	BuiltBy   = "local"
 )
 
 var (
@@ -57,7 +58,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case flagVersion:
-		fmt.Printf("goldy %s (built %s)\n", Version, BuildDate)
+		fmt.Printf("goldy %s (built %s by %s)\n", Version, BuildDate, BuiltBy)
 		return nil
 	case flagInfo:
 		return runInfo(cfg)
@@ -157,7 +158,7 @@ func runUpdate(cfg *config.Paths, logger *errs.Logger) error {
 }
 
 func runTUI(cfg *config.Paths, logger *errs.Logger) error {
-	m := app.New(cfg, logger, Version, BuildDate)
+	m := app.New(cfg, logger, Version, BuildDate, BuiltBy)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	m.SetProgram(p)
 	_, err := p.Run()

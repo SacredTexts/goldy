@@ -13,6 +13,7 @@ builds:
     binary: goldy
     env:
       - CGO_ENABLED=0
+      - BUILT_BY={{ if index .Env "GITHUB_ACTOR" }}{{ .Env.GITHUB_ACTOR }}{{ else }}local{{ end }}
     goos:
       - darwin
       - linux
@@ -21,7 +22,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X main.Version={{.Version}} -X main.BuildDate={{.Date}}
+      - -s -w -X main.Version={{.Version}} -X main.BuildDate={{.Date}} -X main.BuiltBy={{ .Env.BUILT_BY }}
 
 archives:
   - id: default
