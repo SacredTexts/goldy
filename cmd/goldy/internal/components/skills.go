@@ -11,6 +11,35 @@ import (
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/shared"
 )
 
+func VerifySkills(cfg *config.Paths) []shared.VerifyCheck {
+	skillsDir := filepath.Join(cfg.GoldySrc, "skills")
+	entries, err := os.ReadDir(skillsDir)
+	if err != nil {
+		return nil
+	}
+	var checks []shared.VerifyCheck
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		p := filepath.Join(cfg.ClaudeSkills, e.Name())
+		checks = append(checks, shared.VerifyCheck{
+			Label:  e.Name(),
+			Path:   p,
+			Exists: fileops.Exists(p),
+			Group:  "Skills",
+		})
+	}
+	// Summary check for Codex skills directory
+	checks = append(checks, shared.VerifyCheck{
+		Label:  "codex skills directory",
+		Path:   cfg.CodexSkills,
+		Exists: fileops.DirExists(cfg.CodexSkills),
+		Group:  "Skills",
+	})
+	return checks
+}
+
 func ListSkills(cfg *config.Paths) ([]shared.SubItem, error) {
 	skillsDir := filepath.Join(cfg.GoldySrc, "skills")
 	entries, err := os.ReadDir(skillsDir)
@@ -41,6 +70,7 @@ func InstallSkillsFiltered(cfg *config.Paths, log *errs.Logger, filter []string)
 
 	fileops.MkdirAll(cfg.ClaudeSkills)
 	fileops.MkdirAll(cfg.AgentsSkills)
+	fileops.MkdirAll(cfg.CodexSkills)
 
 	entries, err := os.ReadDir(skillsDir)
 	if err != nil {
@@ -63,13 +93,15 @@ func InstallSkillsFiltered(cfg *config.Paths, log *errs.Logger, filter []string)
 		}
 		fileops.Remove(filepath.Join(cfg.AgentsSkills, name))
 		fileops.Symlink(src, filepath.Join(cfg.AgentsSkills, name))
+		fileops.Remove(filepath.Join(cfg.CodexSkills, name))
+		fileops.Symlink(src, filepath.Join(cfg.CodexSkills, name))
 		count++
 	}
 
 	return shared.StepResult{
 		ComponentID: IDSkills,
 		Success:     true,
-		Message:     fmt.Sprintf("Linked %d/%d skills to ~/.claude/skills/", count, len(filter)),
+		Message:     fmt.Sprintf("Linked %d/%d skills to ~/.claude/ + ~/.codex/", count, len(filter)),
 		ItemCount:   count,
 	}
 }
@@ -88,6 +120,7 @@ func InstallSkills(cfg *config.Paths, log *errs.Logger) shared.StepResult {
 
 	fileops.MkdirAll(cfg.ClaudeSkills)
 	fileops.MkdirAll(cfg.AgentsSkills)
+	fileops.MkdirAll(cfg.CodexSkills)
 
 	entries, err := os.ReadDir(skillsDir)
 	if err != nil {
@@ -112,13 +145,16 @@ func InstallSkills(cfg *config.Paths, log *errs.Logger) shared.StepResult {
 		fileops.Remove(filepath.Join(cfg.AgentsSkills, name))
 		fileops.Symlink(src, filepath.Join(cfg.AgentsSkills, name))
 
+		fileops.Remove(filepath.Join(cfg.CodexSkills, name))
+		fileops.Symlink(src, filepath.Join(cfg.CodexSkills, name))
+
 		count++
 	}
 
 	return shared.StepResult{
 		ComponentID: IDSkills,
 		Success:     true,
-		Message:     fmt.Sprintf("Linked %d skills to ~/.claude/skills/", count),
+		Message:     fmt.Sprintf("Linked %d skills to ~/.claude/ + ~/.codex/", count),
 		ItemCount:   count,
 	}
 }

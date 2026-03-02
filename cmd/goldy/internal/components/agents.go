@@ -12,6 +12,28 @@ import (
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/shared"
 )
 
+func VerifyAgents(cfg *config.Paths) []shared.VerifyCheck {
+	agentsDir := filepath.Join(cfg.GoldySrc, "agents")
+	entries, err := os.ReadDir(agentsDir)
+	if err != nil {
+		return nil
+	}
+	var checks []shared.VerifyCheck
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+			continue
+		}
+		p := filepath.Join(cfg.ClaudeAgents, e.Name())
+		checks = append(checks, shared.VerifyCheck{
+			Label:  strings.TrimSuffix(e.Name(), ".md"),
+			Path:   p,
+			Exists: fileops.Exists(p),
+			Group:  "Agents",
+		})
+	}
+	return checks
+}
+
 func ListAgents(cfg *config.Paths) ([]shared.SubItem, error) {
 	agentsDir := filepath.Join(cfg.GoldySrc, "agents")
 	entries, err := os.ReadDir(agentsDir)

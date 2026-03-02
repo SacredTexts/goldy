@@ -68,10 +68,10 @@ func InstallCore(cfg *config.Paths, log *errs.Logger) shared.StepResult {
 
 func VerifyCore(cfg *config.Paths) []shared.VerifyCheck {
 	return []shared.VerifyCheck{
-		{Label: "goldy skill", Path: filepath.Join(cfg.ClaudeSkills, "goldy"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeSkills, "goldy"))},
-		{Label: "goldy command", Path: filepath.Join(cfg.ClaudeCommands, "goldy.md"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeCommands, "goldy.md"))},
-		{Label: "goldy-loop command", Path: filepath.Join(cfg.ClaudeCommands, "goldy-loop.md"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeCommands, "goldy-loop.md"))},
-		{Label: "Gold Standard template", Path: filepath.Join(cfg.ClaudeRoot, "GOLD-STANDARD-SAMPLE-PLAN.md"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeRoot, "GOLD-STANDARD-SAMPLE-PLAN.md"))},
-		{Label: "pre_tool_use.py", Path: filepath.Join(cfg.ClaudeHooks, "pre_tool_use.py"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeHooks, "pre_tool_use.py"))},
+		{Label: "goldy skill", Path: filepath.Join(cfg.ClaudeSkills, "goldy"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeSkills, "goldy")), Group: "Core"},
+		{Label: "goldy command", Path: filepath.Join(cfg.ClaudeCommands, "goldy.md"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeCommands, "goldy.md")), Group: "Core"},
+		{Label: "goldy-loop command", Path: filepath.Join(cfg.ClaudeCommands, "goldy-loop.md"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeCommands, "goldy-loop.md")), Group: "Core"},
+		{Label: "Gold Standard template", Path: filepath.Join(cfg.ClaudeRoot, "GOLD-STANDARD-SAMPLE-PLAN.md"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeRoot, "GOLD-STANDARD-SAMPLE-PLAN.md")), Group: "Core"},
+		{Label: "pre_tool_use.py", Path: filepath.Join(cfg.ClaudeHooks, "pre_tool_use.py"), Exists: fileops.Exists(filepath.Join(cfg.ClaudeHooks, "pre_tool_use.py")), Group: "Core"},
 	}
 }

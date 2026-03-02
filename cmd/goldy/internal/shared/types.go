@@ -16,6 +16,7 @@ type VerifyCheck struct {
 	Label  string
 	Path   string
 	Exists bool
+	Group  string // component name for grouped display
 }
 
 // Messages for screen transitions

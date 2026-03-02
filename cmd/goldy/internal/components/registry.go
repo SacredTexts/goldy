@@ -36,10 +36,10 @@ type Component struct {
 func All(cfg *config.Paths) []Component {
 	return []Component{
 		{ID: IDCore, MenuKey: "a", Name: "Core", Description: "Goldy skill, commands, hooks, plan template", InfoText: InfoCore, Install: InstallCore, Verify: VerifyCore},
-		{ID: IDSkills, MenuKey: "b", Name: "Skills", Description: "31 custom skills (SEO, Frontend, Dev Tools, etc.)", InfoText: InfoSkills, Install: InstallSkills, SubItems: ListSkills, InstallFiltered: InstallSkillsFiltered},
-		{ID: IDAgents, MenuKey: "c", Name: "Agents", Description: "19 agent definitions (GSD, SEO, code review)", InfoText: InfoAgents, Install: InstallAgents, SubItems: ListAgents, InstallFiltered: InstallAgentsFiltered},
-		{ID: IDHooks, MenuKey: "d", Name: "Extra Hooks", Description: "Notification, stop, GSD hooks, TTS utilities", InfoText: InfoHooks, Install: InstallHooks, SubItems: ListHooks, InstallFiltered: InstallHooksFiltered},
-		{ID: IDCommands, MenuKey: "e", Name: "Extra Commands", Description: "/agent, /plannotator-review, /revise-claude-md, /global-update", InfoText: InfoCommands, Install: InstallCommands, SubItems: ListCommands, InstallFiltered: InstallCommandsFiltered},
+		{ID: IDSkills, MenuKey: "b", Name: "Skills", Description: "31 custom skills (SEO, Frontend, Dev Tools, etc.)", InfoText: InfoSkills, Install: InstallSkills, Verify: VerifySkills, SubItems: ListSkills, InstallFiltered: InstallSkillsFiltered},
+		{ID: IDAgents, MenuKey: "c", Name: "Agents", Description: "19 agent definitions (GSD, SEO, code review)", InfoText: InfoAgents, Install: InstallAgents, Verify: VerifyAgents, SubItems: ListAgents, InstallFiltered: InstallAgentsFiltered},
+		{ID: IDHooks, MenuKey: "d", Name: "Extra Hooks", Description: "Notification, stop, GSD hooks, TTS utilities", InfoText: InfoHooks, Install: InstallHooks, Verify: VerifyHooks, SubItems: ListHooks, InstallFiltered: InstallHooksFiltered},
+		{ID: IDCommands, MenuKey: "e", Name: "Extra Commands", Description: "/agent, /plannotator-review, /revise-claude-md, /global-update", InfoText: InfoCommands, Install: InstallCommands, Verify: VerifyCommands, SubItems: ListCommands, InstallFiltered: InstallCommandsFiltered},
 		{ID: IDGSD, MenuKey: "f", Name: "GSD", Description: "Get-Shit-Done workflow (npm)", InfoText: InfoGSD, Install: InstallGSD},
 		{ID: IDClaudeMem, MenuKey: "g", Name: "Claude-Mem", Description: "Team memory plugin", InfoText: InfoClaudeMem, Install: InstallClaudeMem},
 		{ID: IDPlannotator, MenuKey: "h", Name: "Plannotator", Description: "Plan review UI plugin", InfoText: InfoPlannotator, Install: InstallPlannotator},

@@ -107,13 +107,25 @@ func runNonInteractive(cfg *config.Paths, logger *errs.Logger, comps []component
 
 	fmt.Println()
 	fmt.Println("  Verification:")
-	checks := components.VerifyCore(cfg)
-	for _, c := range checks {
-		icon := "ok"
-		if !c.Exists {
-			icon = "XX"
+
+	installedIDs := make(map[string]bool)
+	for _, r := range results {
+		if r.Success {
+			installedIDs[r.ComponentID] = true
 		}
-		fmt.Printf("    [%s] %s\n", icon, c.Label)
+	}
+	allComps := components.All(cfg)
+	for _, comp := range allComps {
+		if comp.Verify != nil && installedIDs[comp.ID] {
+			checks := comp.Verify(cfg)
+			for _, c := range checks {
+				icon := "ok"
+				if !c.Exists {
+					icon = "XX"
+				}
+				fmt.Printf("    [%s] %s\n", icon, c.Label)
+			}
+		}
 	}
 
 	errCount := logger.ErrorCount()

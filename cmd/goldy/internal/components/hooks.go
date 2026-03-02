@@ -11,6 +11,25 @@ import (
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/shared"
 )
 
+func VerifyHooks(cfg *config.Paths) []shared.VerifyCheck {
+	hooksDir := filepath.Join(cfg.GoldySrc, "extra-hooks")
+	entries, err := os.ReadDir(hooksDir)
+	if err != nil {
+		return nil
+	}
+	var checks []shared.VerifyCheck
+	for _, e := range entries {
+		p := filepath.Join(cfg.ClaudeHooks, e.Name())
+		checks = append(checks, shared.VerifyCheck{
+			Label:  e.Name(),
+			Path:   p,
+			Exists: fileops.Exists(p),
+			Group:  "Extra Hooks",
+		})
+	}
+	return checks
+}
+
 func ListHooks(cfg *config.Paths) ([]shared.SubItem, error) {
 	hooksDir := filepath.Join(cfg.GoldySrc, "extra-hooks")
 	entries, err := os.ReadDir(hooksDir)

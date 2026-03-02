@@ -12,6 +12,28 @@ import (
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/shared"
 )
 
+func VerifyCommands(cfg *config.Paths) []shared.VerifyCheck {
+	cmdsDir := filepath.Join(cfg.GoldySrc, "extra-commands")
+	entries, err := os.ReadDir(cmdsDir)
+	if err != nil {
+		return nil
+	}
+	var checks []shared.VerifyCheck
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+			continue
+		}
+		p := filepath.Join(cfg.ClaudeCommands, e.Name())
+		checks = append(checks, shared.VerifyCheck{
+			Label:  strings.TrimSuffix(e.Name(), ".md"),
+			Path:   p,
+			Exists: fileops.Exists(p),
+			Group:  "Extra Commands",
+		})
+	}
+	return checks
+}
+
 func ListCommands(cfg *config.Paths) ([]shared.SubItem, error) {
 	cmdsDir := filepath.Join(cfg.GoldySrc, "extra-commands")
 	entries, err := os.ReadDir(cmdsDir)

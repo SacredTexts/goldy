@@ -31,5 +31,8 @@ goldy-install
 npm/bin/goldy-*
 npm/node_modules/
 
+# Python virtual environments in skills
+skills/**/.venv/
+
 # Secrets
 .env-npm-token

@@ -7,6 +7,7 @@ import (
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/config"
 	errs "github.com/SacredTexts/goldy/cmd/goldy/internal/errors"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/installer"
+	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/confirm"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/done"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/info"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/menu"
@@ -22,6 +23,7 @@ type Screen int
 const (
 	ScreenStartup Screen = iota
 	ScreenMenu
+	ScreenConfirm
 	ScreenProgress
 	ScreenVerify
 	ScreenDone
@@ -33,6 +35,7 @@ type Model struct {
 	screen       Screen
 	startup      startup.Model
 	menu         menu.Model
+	confirmScr   confirm.Model
 	progress     progress.Model
 	verify       verify.Model
 	doneScreen   done.Model
@@ -80,6 +83,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.startup, _ = m.startup.Update(msg)
 		m.menu, _ = m.menu.Update(msg)
+		m.confirmScr, _ = m.confirmScr.Update(msg)
 		m.progress, _ = m.progress.Update(msg)
 		m.verify, _ = m.verify.Update(msg)
 		doneModel, _ := m.doneScreen.Update(msg)
@@ -121,6 +125,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case menu.StartInstallMsg:
+		m.confirmScr = confirm.New(msg.Components, msg.SubSelections)
+		m.screen = ScreenConfirm
+		return m, nil
+
+	case confirm.ConfirmInstallMsg:
 		m.progress = progress.New(msg.Components)
 		m.screen = ScreenProgress
 		if len(msg.SubSelections) > 0 {
@@ -159,9 +168,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.screen == ScreenProgress && m.progress.Done() {
 			results := m.progress.Results()
-			checks := components.VerifyCore(m.cfg)
+
+			// Collect verify checks from ALL installed components
+			installedIDs := make(map[string]bool)
+			for _, r := range results {
+				if r.Success {
+					installedIDs[r.ComponentID] = true
+				}
+			}
+			var allChecks []shared.VerifyCheck
+			for _, comp := range components.All(m.cfg) {
+				if comp.Verify != nil && installedIDs[comp.ID] {
+					allChecks = append(allChecks, comp.Verify(m.cfg)...)
+				}
+			}
+
 			m.verify, _ = m.verify.Update(verify.SetChecksMsg{
-				Checks:   checks,
+				Checks:   allChecks,
 				ErrCount: m.logger.ErrorCount(),
 				ErrLog:   m.logger.Path(),
 			})
@@ -170,7 +193,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.screen = ScreenVerify
 			return m, nil
 		}
-		if m.screen == ScreenVerify {
+		if m.screen == ScreenVerify && msg.String() == "enter" {
 			m.screen = ScreenDone
 			return m, nil
 		}
@@ -182,6 +205,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.startup, cmd = m.startup.Update(msg)
 	case ScreenMenu:
 		m.menu, cmd = m.menu.Update(msg)
+	case ScreenConfirm:
+		m.confirmScr, cmd = m.confirmScr.Update(msg)
 	case ScreenProgress:
 		m.progress, cmd = m.progress.Update(msg)
 	case ScreenVerify:
@@ -204,6 +229,8 @@ func (m *Model) View() string {
 		return m.startup.View()
 	case ScreenMenu:
 		return m.menu.View()
+	case ScreenConfirm:
+		return m.confirmScr.View()
 	case ScreenProgress:
 		return m.progress.View()
 	case ScreenVerify:
