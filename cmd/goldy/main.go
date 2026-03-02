@@ -17,10 +17,17 @@ import (
 )
 
 var (
-	flagAll    bool
-	flagUpdate bool
-	flagCore   bool
-	flagInfo   bool
+	// Set via -ldflags at build time
+	Version   = "dev"
+	BuildDate = "unknown"
+)
+
+var (
+	flagAll     bool
+	flagUpdate  bool
+	flagCore    bool
+	flagInfo    bool
+	flagVersion bool
 )
 
 var rootCmd = &cobra.Command{
@@ -37,6 +44,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&flagUpdate, "update", "U", false, "Update all components from upstream")
 	rootCmd.Flags().BoolVarP(&flagCore, "core", "a", false, "Install core only")
 	rootCmd.Flags().BoolVarP(&flagInfo, "info", "i", false, "Show detailed component descriptions")
+	rootCmd.Flags().BoolVarP(&flagVersion, "version", "v", false, "Show version and build date")
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -48,6 +56,9 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	switch {
+	case flagVersion:
+		fmt.Printf("goldy %s (built %s)\n", Version, BuildDate)
+		return nil
 	case flagInfo:
 		return runInfo(cfg)
 	case flagAll:
@@ -146,7 +157,7 @@ func runUpdate(cfg *config.Paths, logger *errs.Logger) error {
 }
 
 func runTUI(cfg *config.Paths, logger *errs.Logger) error {
-	m := app.New(cfg, logger)
+	m := app.New(cfg, logger, Version, BuildDate)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	m.SetProgram(p)
 	_, err := p.Run()

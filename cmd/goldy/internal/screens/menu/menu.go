@@ -24,16 +24,20 @@ type Model struct {
 	selected         map[int]bool
 	pickerSelections map[string][]shared.SubItem
 	cfg              *config.Paths
+	version          string
+	buildDate        string
 	width            int
 	height           int
 }
 
-func New(items []components.Component, cfg *config.Paths) Model {
+func New(items []components.Component, cfg *config.Paths, version, buildDate string) Model {
 	return Model{
 		items:            items,
 		selected:         make(map[int]bool),
 		pickerSelections: make(map[string][]shared.SubItem),
 		cfg:              cfg,
+		version:          version,
+		buildDate:        buildDate,
 	}
 }
 
@@ -237,6 +241,9 @@ func (m Model) View() string {
 	b.WriteString(style.HelpDesc.Render(" picky chooser  "))
 	b.WriteString(style.HelpKey.Render("q"))
 	b.WriteString(style.HelpDesc.Render(" quit"))
+
+	b.WriteString("\n\n")
+	b.WriteString(style.Muted.Render(fmt.Sprintf("v%s · built %s", m.version, m.buildDate)))
 
 	return b.String()
 }
