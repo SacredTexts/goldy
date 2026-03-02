@@ -13,6 +13,7 @@ import (
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/menu"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/picker"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/progress"
+	srcsscreen "github.com/SacredTexts/goldy/cmd/goldy/internal/screens/sources"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/startup"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/screens/verify"
 	"github.com/SacredTexts/goldy/cmd/goldy/internal/shared"
@@ -29,6 +30,7 @@ const (
 	ScreenDone
 	ScreenInfo
 	ScreenPicker
+	ScreenSources
 )
 
 type Model struct {
@@ -41,6 +43,7 @@ type Model struct {
 	doneScreen   done.Model
 	info         info.Model
 	picker       picker.Model
+	sourcesScr   srcsscreen.Model
 	cfg          *config.Paths
 	logger       *errs.Logger
 	orchestrator *installer.Orchestrator
@@ -61,6 +64,7 @@ func New(cfg *config.Paths, logger *errs.Logger, version, buildDate, builtBy str
 		verify:       verify.New(),
 		doneScreen:   done.New(),
 		info:         info.New(comps),
+		sourcesScr:   srcsscreen.New(),
 		cfg:          cfg,
 		logger:       logger,
 		orchestrator: orch,
@@ -90,6 +94,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.doneScreen = doneModel.(done.Model)
 		m.info, _ = m.info.Update(msg)
 		m.picker, _ = m.picker.Update(msg)
+		m.sourcesScr, _ = m.sourcesScr.Update(msg)
 		return m, nil
 
 	case shared.StartupCompleteMsg:
@@ -148,6 +153,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.orchestrator.RunAsync(m.program, msg.Components)
 		}
 		return m, m.progress.Init()
+
+	case shared.OpenSourcesMsg:
+		m.sourcesScr = srcsscreen.New()
+		m.screen = ScreenSources
+		goldySrc := m.cfg.GoldySrc
+		return m, func() tea.Msg {
+			return srcsscreen.LoadMsg{GoldySrc: goldySrc}
+		}
 
 	case shared.StartUpdateAllMsg:
 		allComps := components.All(m.cfg)
@@ -219,6 +232,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.info, cmd = m.info.Update(msg)
 	case ScreenPicker:
 		m.picker, cmd = m.picker.Update(msg)
+	case ScreenSources:
+		m.sourcesScr, cmd = m.sourcesScr.Update(msg)
 	}
 	return m, cmd
 }
@@ -241,6 +256,8 @@ func (m *Model) View() string {
 		return m.info.View()
 	case ScreenPicker:
 		return m.picker.View()
+	case ScreenSources:
+		return m.sourcesScr.View()
 	default:
 		return ""
 	}

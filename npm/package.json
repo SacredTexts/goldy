@@ -1,6 +1,6 @@
 {
   "name": "goldy-cli",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "GOLDY toolkit for Claude Code",
   "bin": {
     "goldy": "bin/goldy"

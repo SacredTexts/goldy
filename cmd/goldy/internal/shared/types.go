@@ -68,6 +68,9 @@ type PickerDoneMsg struct {
 // Update / Install All
 type StartUpdateAllMsg struct{}
 
+// Sources screen
+type OpenSourcesMsg struct{}
+
 // Key bindings
 type KeyMap struct {
 	Quit key.Binding

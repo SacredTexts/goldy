@@ -134,6 +134,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				}
 			}
 
+		case msg.String() == "z":
+			return m, func() tea.Msg { return shared.OpenSourcesMsg{} }
+
 		case msg.String() == "enter":
 			// If cursor is on Update/Install All row
 			if m.cursor == len(m.items) {
@@ -241,6 +244,8 @@ func (m Model) View() string {
 	b.WriteString(style.HelpDesc.Render(" info  "))
 	b.WriteString(style.HelpKey.Render("p"))
 	b.WriteString(style.HelpDesc.Render(" picky chooser  "))
+	b.WriteString(style.HelpKey.Render("z"))
+	b.WriteString(style.HelpDesc.Render(" sources  "))
 	b.WriteString(style.HelpKey.Render("q"))
 	b.WriteString(style.HelpDesc.Render(" quit"))
 
