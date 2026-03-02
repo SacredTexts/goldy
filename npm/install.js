@@ -89,6 +89,13 @@ async function main() {
   const archiveName = `${BIN_NAME}_${goos}_${goarch}.${ext}`;
   const url = `https://github.com/${REPO}/releases/download/v${version}/${archiveName}`;
 
+  fs.mkdirSync(BIN_DIR, { recursive: true });
+  const destBin = path.join(BIN_DIR, `${BIN_NAME}${binSuffix}`);
+
+  // Check if bundled binary already exists and works for this platform
+  const bundledBin = path.join(BIN_DIR, BIN_NAME);
+  const hasBundledBin = fs.existsSync(bundledBin);
+
   console.log(`Downloading goldy v${version} for ${goos}/${goarch}...`);
 
   try {
@@ -101,10 +108,7 @@ async function main() {
       await extractTarGz(buffer, tmpDir);
     }
 
-    fs.mkdirSync(BIN_DIR, { recursive: true });
-
     const srcBin = path.join(tmpDir, `${BIN_NAME}${binSuffix}`);
-    const destBin = path.join(BIN_DIR, `${BIN_NAME}${binSuffix}`);
 
     fs.copyFileSync(srcBin, destBin);
     if (!isWindows) {
@@ -115,12 +119,43 @@ async function main() {
 
     console.log(`Installed goldy to ${destBin}`);
   } catch (err) {
-    console.error(`Failed to download goldy: ${err.message}`);
-    console.error(`URL: ${url}`);
-    console.error("");
-    console.error("You can install manually:");
-    console.error("  cd ~/.goldy/cmd/goldy-install && go install .");
-    process.exit(1);
+    // If download fails, try falling back to the latest available release
+    console.warn(`Release v${version} not found, trying latest release...`);
+    try {
+      const latestUrl = `https://github.com/${REPO}/releases/latest/download/${archiveName}`;
+      const buffer = await downloadFile(latestUrl);
+      const tmpDir = path.join(os.tmpdir(), `goldy-extract-${Date.now()}`);
+
+      if (isWindows) {
+        await extractZip(buffer, tmpDir);
+      } else {
+        await extractTarGz(buffer, tmpDir);
+      }
+
+      const srcBin = path.join(tmpDir, `${BIN_NAME}${binSuffix}`);
+
+      fs.copyFileSync(srcBin, destBin);
+      if (!isWindows) {
+        fs.chmodSync(destBin, 0o755);
+      }
+
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+
+      console.log(`Installed goldy (latest release) to ${destBin}`);
+    } catch (fallbackErr) {
+      if (hasBundledBin) {
+        console.warn(`Download failed, using bundled binary.`);
+        fs.chmodSync(bundledBin, 0o755);
+        console.log(`Using bundled goldy at ${bundledBin}`);
+      } else {
+        console.error(`Failed to download goldy: ${err.message}`);
+        console.error(`URL: ${url}`);
+        console.error("");
+        console.error("You can install manually:");
+        console.error("  curl -fsSL https://raw.githubusercontent.com/SacredTexts/goldy/main/install.sh | bash");
+        process.exit(1);
+      }
+    }
   }
 }
 

@@ -30,3 +30,6 @@ logs/
 goldy-install
 npm/bin/goldy-*
 npm/node_modules/
+
+# Secrets
+.env-npm-token

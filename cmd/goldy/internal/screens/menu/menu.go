@@ -230,6 +230,8 @@ func (m Model) View() string {
 	b.WriteString(style.HelpKey.Render("enter"))
 	b.WriteString(style.HelpDesc.Render(" install  "))
 	b.WriteString(style.HelpKey.Render("i"))
+	b.WriteString(style.HelpDesc.Render(" update/install all  "))
+	b.WriteString(style.HelpKey.Render("?"))
 	b.WriteString(style.HelpDesc.Render(" info  "))
 	b.WriteString(style.HelpKey.Render("p"))
 	b.WriteString(style.HelpDesc.Render(" picky chooser  "))
