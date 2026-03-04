@@ -62,6 +62,16 @@ GOLDY supports browser-based bug investigation and smoke testing via two auto-de
 **Smoke checks (`--browser-check <url>` on `/goldy-loop`):**
 After each phase completes, goldy-loop emits a 3-step smoke check (navigate, screenshot, console). These are observe-only. Interaction (click, fill, evaluate) requires explicit user request.
 
+## Coding Research (Auto-Invoke)
+
+When goldy output includes `coding_research.required: true`, Claude MUST:
+1. Load the coding-research skill at the path in `coding_research.skill_path`
+2. Run the structured diagnostic interview (classify → interview → synthesize)
+3. Get user confirmation on the synthesis
+4. Use the confirmed synthesis as input to the Gold Standard plan
+
+This ensures the real problem is understood before any plan is written.
+
 ## References (load on demand)
 
 | Reference | When to load |
@@ -71,6 +81,7 @@ After each phase completes, goldy-loop emits a 3-step smoke check (navigate, scr
 | `references/operations-runbook.md` | Install, invoke, resume, recovery operations |
 | `references/attribution.md` | Attribution or licensing questions |
 | `references/book-flow-domain-pack.md` | Book/TOC/reader domain work |
+| `skills/coding-research/SKILL.md` | Auto-loaded before planning when coding_research.required is true |
 
 ## Install / Verify
 

@@ -185,6 +185,26 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _emit_phase_research_protocol(phase_number: int, phase: dict[str, object]) -> None:
+    """Emit a phase_research_protocol block for the coding-research hook."""
+    protocol = {
+        "phase_research_protocol": {
+            "hook": "coding_research_phase_interview",
+            "phase_number": phase_number,
+            "phase_title": str(phase.get("title", "")),
+            "instructions": (
+                "Before executing this phase, run the coding-research per-phase protocol. "
+                "Ask: 1) Scope confirmation — verify files/layers still correct, "
+                "2) Implementation approach — present 2-3 options, "
+                "3) Risk/edge case surfacing — what could go wrong, "
+                "4) Open brainstorming — anything else to think through. "
+                "Reference: skills/coding-research/references/phase-hook-protocol.md"
+            ),
+        }
+    }
+    print(json.dumps(protocol, indent=2))
+
+
 def _print_breaker_remediation(reason: str | None) -> None:
     normalized = (reason or "").lower()
     if "permission_denied" in normalized:
@@ -1922,6 +1942,9 @@ def run_loop(args: argparse.Namespace) -> int:
         session_state["status"] = "running"
         session_state["last_checkpoint_at"] = _utc_now_iso()
         write_json(session_path, session_state)
+
+        # Emit phase research protocol for coding-research hook
+        _emit_phase_research_protocol(phase_number, phase)
 
         compaction_event = _run_compaction(
             execution_root,

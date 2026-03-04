@@ -67,6 +67,20 @@ CODING_KEYWORDS = (
 )
 
 
+def _resolve_coding_research_skill() -> Path | None:
+    """Find the coding-research skill SKILL.md relative to this script."""
+    script_dir = Path(__file__).resolve().parent
+    # Try: goldy_repo/skills/coding-research/SKILL.md
+    candidate = script_dir.parent / "skills" / "coding-research" / "SKILL.md"
+    if candidate.exists():
+        return candidate
+    # Try: ~/.goldy/skills/coding-research/SKILL.md
+    home_candidate = Path.home() / ".goldy" / "skills" / "coding-research" / "SKILL.md"
+    if home_candidate.exists():
+        return home_candidate
+    return None
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="GOLDY planner/orchestrator")
     parser.add_argument("prompt", nargs="*", help="Planning prompt")
@@ -324,6 +338,20 @@ def main() -> int:
             banner = "GOLDY ACTIVE (AUTO-INVOKE)"
         else:
             banner = "GOLDY ACTIVE"
+        # Coding-research skill: auto-invoke diagnostic interview before planning
+        coding_research_skill = _resolve_coding_research_skill()
+        coding_research_block = None
+        if coding_research_skill and (intent_match or coding_match):
+            coding_research_block = {
+                "required": True,
+                "skill_path": str(coding_research_skill),
+                "instruction": (
+                    "Load and execute the coding-research diagnostic interview "
+                    "before creating a plan. The synthesis output becomes input "
+                    "to the Gold Standard plan."
+                ),
+            }
+
         output = {
             "banner": banner,
             "session_id": session_id,
@@ -334,6 +362,8 @@ def main() -> int:
             "coding_match": coding_match,
             "plan_mode_required": plan_mode_required,
         }
+        if coding_research_block:
+            output["coding_research"] = coding_research_block
 
         if args.json:
             print(json.dumps(output, indent=2, sort_keys=True))
